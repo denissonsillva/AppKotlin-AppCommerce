@@ -1,10 +1,7 @@
 package br.com.djektech.appcommerce
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.preference.PreferenceManager
-import android.provider.MediaStore
 import android.view.MenuItem
 import android.widget.ImageView
 import android.widget.TextView
@@ -20,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import br.com.djektech.appcommerce.adapter.ProductAdapter
 import br.com.djektech.appcommerce.adapter.ProductCategoryAdapter
 import br.com.djektech.appcommerce.model.ProductCategory
+import br.com.djektech.appcommerce.viewmodel.HomeBannerViewModel
 import br.com.djektech.appcommerce.viewmodel.ProductViewModel
 import br.com.djektech.appcommerce.viewmodel.UserViewModel
 import com.google.android.material.navigation.NavigationView
@@ -36,9 +34,13 @@ class MainActivity : AppCompatActivity(),
     lateinit var recyclerCategory: RecyclerView
     lateinit var recyclerProduct: RecyclerView
     lateinit var imageProfile: ImageView
+    lateinit var bannerImage: ImageView
+    lateinit var bannerTitle: TextView
+    lateinit var bannerSubtitle: TextView
 
     private val productViewModel by viewModels<ProductViewModel>()
     private val userViewModel by viewModels<UserViewModel>()
+    private val homeBannerViewModel by viewModels<HomeBannerViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +53,15 @@ class MainActivity : AppCompatActivity(),
 
         textTitle = findViewById(R.id.toolbar_title)
         textTitle.text = getString(R.string.app_name)
+
+        bannerImage = findViewById(R.id.iv_slider_img)
+        bannerTitle = findViewById(R.id.tv_slider_title)
+        bannerSubtitle = findViewById(R.id.tv_slider_subtitle)
+
+        homeBannerViewModel.load(bannerImage).observe(this, Observer {
+            bannerTitle.text = it.title
+            bannerSubtitle.text = it.subtitle
+        })
 
         drawerLayout = findViewById(R.id.nav_drawer_layout)
 
@@ -151,17 +162,10 @@ class MainActivity : AppCompatActivity(),
     override fun onResume() {
         super.onResume()
 
-        val profileImage = PreferenceManager.getDefaultSharedPreferences(this).getString(MediaStore.EXTRA_OUTPUT, null)
-
-        if (profileImage != null) {
-            imageProfile.setImageURI(Uri.parse(profileImage))
-        } else {
-            imageProfile.setImageResource(R.drawable.profile_image)
-        }
-
-        userViewModel.isLogged().observe(this, Observer {
-            it?.let {
+        userViewModel.isLogged().observe(this, Observer { user ->
+            user?.let {
                 textLogin.text = "${it.user.name} ${it.user.surname}"
+                userViewModel.loadProfile(it.user.id, imageProfile)
             }
         })
     }

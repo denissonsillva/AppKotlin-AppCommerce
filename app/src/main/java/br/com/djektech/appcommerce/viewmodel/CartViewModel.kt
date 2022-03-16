@@ -1,12 +1,10 @@
 package br.com.djektech.appcommerce.viewmodel
 
+
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import br.com.djektech.appcommerce.model.Order
-import br.com.djektech.appcommerce.model.OrderedProduct
-import br.com.djektech.appcommerce.model.Product
-import br.com.djektech.appcommerce.model.ProductVariants
+import br.com.djektech.appcommerce.model.*
 import java.util.*
 
 class CartViewModel (application: Application) : AndroidViewModel(application) {
@@ -17,12 +15,19 @@ class CartViewModel (application: Application) : AndroidViewModel(application) {
 
     companion object {
 
-        val order = Order(time = Date().time,
-            status = Order.Status.CART,
-            method = Order.Method.NONE,
-            userId = "0")
+        private var order = Order()
 
         private val orderedProducts = mutableListOf<OrderedProduct>()
+
+        fun clear() {
+            orderedProducts.clear()
+            order = Order()
+        }
+
+        fun getFullOrder() : OrderWithOrderedProducts {
+            order.time = Date().time
+            return OrderWithOrderedProducts(order, orderedProducts)
+        }
 
         fun addProduct(product: ProductVariants, quantity: Int) {
             if(compare(product)) {
@@ -81,5 +86,8 @@ class CartViewModel (application: Application) : AndroidViewModel(application) {
         private fun updatePrice() {
             order.price = orderedProducts.sumByDouble { it.quantity * it.product.price }
         }
+
     }
+
+
 }

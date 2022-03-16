@@ -2,13 +2,13 @@ package br.com.djektech.appcommerce
 
 import android.content.Intent
 import android.net.Uri
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
 import android.preference.PreferenceManager
 import android.provider.MediaStore
 import android.widget.*
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
 import androidx.lifecycle.Observer
@@ -26,7 +26,6 @@ class UserProfileActivity : AppCompatActivity() {
     lateinit var toolbar: Toolbar
     lateinit var textTitle: TextView
     lateinit var imageProfile: ImageView
-    lateinit var photoURI: Uri
     lateinit var userProfileName: TextInputEditText
     lateinit var userProfileSurname: TextInputEditText
     lateinit var userProfileEmail: TextInputEditText
@@ -37,6 +36,8 @@ class UserProfileActivity : AppCompatActivity() {
     lateinit var userAddressCep: TextInputEditText
     lateinit var userAddressState: Spinner
     lateinit var btnUserUpdate: Button
+
+    var photoURI: Uri = Uri.EMPTY
 
     lateinit var userWithAddress: UserWithAddresses
 
@@ -73,16 +74,6 @@ class UserProfileActivity : AppCompatActivity() {
         imageProfile = findViewById(R.id.iv_profile_image)
         imageProfile.setOnClickListener{ takePicture() }
 
-        val profileImage = PreferenceManager.getDefaultSharedPreferences(this).getString(MediaStore.EXTRA_OUTPUT, null)
-
-        if (profileImage != null) {
-            photoURI = Uri.parse(profileImage)
-            imageProfile.setImageURI(photoURI)
-        } else {
-            photoURI = Uri.parse("/")
-            imageProfile.setImageResource(R.drawable.profile_image)
-        }
-
         userViewModel.isLogged().observe(this, Observer {
             if (it != null) {
                 userWithAddress = it
@@ -101,6 +92,8 @@ class UserProfileActivity : AppCompatActivity() {
                         }
                     }
                 }
+
+                userViewModel.loadProfile(userWithAddress.user.id, imageProfile)
             } else {
                 startActivity(Intent(this, UserLoginActivity::class.java))
                 finish()
@@ -118,8 +111,6 @@ class UserProfileActivity : AppCompatActivity() {
             user.email = userProfileEmail.text.toString()
             user.image = photoURI.toString()
 
-            userViewModel.updateUser(user)
-
             if(addresses.isEmpty()) {
                 val userAddress = UserAddress(
                     addressLine1 = userAddress1.text.toString(),
@@ -130,7 +121,7 @@ class UserProfileActivity : AppCompatActivity() {
                     state = resources.getStringArray(R.array.states)[userAddressState.selectedItemPosition],
                     userId = user.id)
 
-                userViewModel.createAddress(userAddress)
+                userWithAddress.addresses.add(userAddress)
             } else {
                 addresses.first().apply {
                     addressLine1 = userAddress1.text.toString()
@@ -140,9 +131,9 @@ class UserProfileActivity : AppCompatActivity() {
                     zipCode = userAddressCep.text.toString()
                     state = resources.getStringArray(R.array.states)[userAddressState.selectedItemPosition]
                 }
-
-                userViewModel.updateAddress(addresses.first())
             }
+
+            userViewModel.update(userWithAddress)
         }
 
         Toast.makeText(this, getString(R.string.user_profile_msg_success), Toast.LENGTH_SHORT).show()
@@ -238,7 +229,7 @@ class UserProfileActivity : AppCompatActivity() {
                 }
                 photoFile?.also {
                     photoURI = FileProvider.getUriForFile(this,
-                        "br.com.djektech.appcommerce.fileprovider",
+                        "br.com.arquitetoandroid.appcommerce.fileprovider",
                         it)
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
                     startActivityForResult(intent, REQUEST_TAKE_PHOTO)
@@ -249,10 +240,9 @@ class UserProfileActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        PreferenceManager.getDefaultSharedPreferences(this).apply {
-            edit().putString(MediaStore.EXTRA_OUTPUT, photoURI.toString()).apply()
-        }
-
-        imageProfile.setImageURI(photoURI)
+        userViewModel.uploadProfileImage(userWithAddress.user.id, photoURI).observe(this, Observer {
+            userViewModel.loadProfile(userWithAddress.user.id, imageProfile)
+            photoURI = Uri.parse(it)
+        })
     }
 }

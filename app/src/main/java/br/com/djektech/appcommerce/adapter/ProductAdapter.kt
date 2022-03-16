@@ -1,5 +1,6 @@
 package br.com.djektech.appcommerce.adapter
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.view.LayoutInflater
@@ -12,8 +13,11 @@ import androidx.recyclerview.widget.RecyclerView
 import br.com.djektech.appcommerce.ProductDetailActivity
 import br.com.djektech.appcommerce.R
 import br.com.djektech.appcommerce.model.Product
+import br.com.djektech.appcommerce.repository.ProductsRepository
 
 class ProductAdapter (val context: Context) : RecyclerView.Adapter<ProductAdapter.ViewHolder>() {
+
+    private val productsRepository = ProductsRepository(context.applicationContext as Application)
 
     var list: List<Product> = emptyList()
 
@@ -28,12 +32,13 @@ class ProductAdapter (val context: Context) : RecyclerView.Adapter<ProductAdapte
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val product = list[position]
         holder.title.text = product.title
-        holder.imageView.setImageResource(R.drawable.camiseta_mockup)
         holder.cardView.setOnClickListener {
             val intent = Intent(context, ProductDetailActivity::class.java)
             intent.putExtra("PRODUCT", product)
             context.startActivity(intent)
         }
+
+        productsRepository.loadThumbnail(product, holder.imageView)
     }
 
 

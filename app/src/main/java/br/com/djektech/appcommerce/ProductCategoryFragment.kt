@@ -27,7 +27,7 @@ class ProductCategoryFragment : Fragment() {
 
         val adapterCategory = ProductCategoryAdapter(requireContext())
 
-        producViewModel.allCategories.observe(this, Observer {
+        producViewModel.allCategories.observe(viewLifecycleOwner, Observer {
             adapterCategory.list = it
             adapterCategory.notifyDataSetChanged()
         })

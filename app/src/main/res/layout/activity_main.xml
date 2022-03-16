@@ -54,7 +54,8 @@
                         android:layout_centerInParent="true"
                         android:background="#77000000"
                         android:gravity="center"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:padding="8dp">
 
                         <TextView
                             android:id="@+id/tv_slider_title"

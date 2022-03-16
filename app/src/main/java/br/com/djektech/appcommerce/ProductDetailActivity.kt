@@ -14,12 +14,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
+import androidx.viewpager2.widget.ViewPager2
+import br.com.djektech.appcommerce.adapter.ImageSliderAdapter
 import br.com.djektech.appcommerce.model.Product
 import br.com.djektech.appcommerce.model.ProductVariants
 import br.com.djektech.appcommerce.viewmodel.CartViewModel
 import br.com.djektech.appcommerce.viewmodel.ProductViewModel
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 
 class ProductDetailActivity : AppCompatActivity() {
 
@@ -30,6 +34,8 @@ class ProductDetailActivity : AppCompatActivity() {
     lateinit var chipGroupColor: ChipGroup
     lateinit var chipGroupSize: ChipGroup
     lateinit var btnBuy: Button
+    lateinit var viewPagerImages: ViewPager2
+    lateinit var tabLayout: TabLayout
 
     lateinit var product: Product
     lateinit var productVariants: ProductVariants
@@ -48,9 +54,20 @@ class ProductDetailActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
+        val imageSliderAdapter = ImageSliderAdapter(this)
+
         productViewModel.getProductWithVariants(product.id).observe(this, Observer {
             productVariants = it
             product = productVariants.product
+
+            viewPagerImages = findViewById(R.id.vp_images)
+            tabLayout = findViewById(R.id.tab_layout)
+
+            imageSliderAdapter.product = productVariants
+            viewPagerImages.adapter = imageSliderAdapter
+            imageSliderAdapter.notifyDataSetChanged()
+
+            TabLayoutMediator(tabLayout, viewPagerImages) { tab, position ->  }.attach()
 
             textTitle = findViewById(R.id.toolbar_title)
             textTitle.text = product.title
@@ -96,8 +113,10 @@ class ProductDetailActivity : AppCompatActivity() {
 
     }
 
-    fun fillChipColor() {
+    private fun fillChipColor() {
         val colors = productVariants.colors
+
+        chipGroupColor.removeAllViews()
 
         for (color in colors) {
             val chip = Chip(ContextThemeWrapper(chipGroupColor.context, R.style.Widget_MaterialComponents_Chip_Choice))
@@ -112,8 +131,10 @@ class ProductDetailActivity : AppCompatActivity() {
         }
     }
 
-    fun fillChipSize() {
+    private fun fillChipSize() {
         val sizes = productVariants.sizes
+
+        chipGroupSize.removeAllViews()
 
         for (size in sizes) {
             val chip = Chip(ContextThemeWrapper(chipGroupSize.context, R.style.Widget_MaterialComponents_Chip_Choice))
